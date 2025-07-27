@@ -27,7 +27,6 @@ func StartDB() {
 	}
 
 	cfg.db = database.New(db)
-	fmt.Println(cfg.db)
 }
 
 func main() {
@@ -36,11 +35,13 @@ func main() {
 	cfg = Config{}
 	StartDB()
 
-	CommandRegister("industries", "za industries", handlerIndustries)
-	CommandRegister("sectors", "za sectors", handlerSectors)
-	CommandRegister("highdiv", "Gives the top 5 highest dividend stocks in a given industry", handlerHighDiv)
-	CommandRegister("highfcf", "Gives the top 5 highest free cash flow stocks in a given sectore", handlerHighFCF)
-	CommandRegister("exit", "Exits", handlerExit)
+	CommandRegister("industries", "Gives a list of industries.", handlerIndustries)
+	CommandRegister("sectors", "Gives a list of sectors", handlerSectors)
+	CommandRegister("highdiv", "Gives the top 5 highest dividend stocks in a given industry.", handlerHighDiv)
+	CommandRegister("highfcf", "Gives the top 5 highest free cash flow stocks in a given sector.", handlerHighFCF)
+	CommandRegister("exit", "Exits the REPL.", handlerExit)
+	CommandRegister("growth", "Gives the top 5 highest growth stocks by sector.", handlerHighGrowth)
+	CommandRegister("help", "Help command gives description of all commands.", handlerHelp)
 
 	for {
 
@@ -48,7 +49,7 @@ func main() {
 		fmt.Print("Stock Suggester > ")
 		buf.Scan()
 
-		tokens := strings.Fields(buf.Text())
+		tokens := strings.Fields(strings.ToLower(buf.Text()))
 
 		cmd := tokens[0]
 		cfg.args = make([]string, 0)

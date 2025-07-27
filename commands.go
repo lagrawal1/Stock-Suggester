@@ -10,6 +10,19 @@ import (
 	"strings"
 )
 
+func formatIntegers(input int64) string {
+
+	if input >= 1_000_000_000_000 {
+		return fmt.Sprintf("%.1fT", float64(input)/1_000_000_000_000)
+	} else if input >= 1_000_000_000 {
+		return fmt.Sprintf("%.1fB", float64(input)/1_000_000_000)
+	} else if input >= 1_000_000 {
+		return fmt.Sprintf("%.1fM", float64(input)/1_000_000)
+	}
+	return fmt.Sprintf("%d", input)
+
+}
+
 type Command struct {
 	name        string
 	description string
@@ -129,7 +142,7 @@ func handlerHighDiv() error {
 	fmt.Println("Top Dividend Stocks in", industry_name.String)
 
 	for _, stock := range data {
-		fmt.Println(stock.Symbol.String, ":", stock.MaxDiv.Float64)
+		fmt.Println(stock.Symbol.String, stock.Displayname.String, ":", stock.MaxDiv.Float64)
 	}
 
 	return nil
@@ -159,10 +172,44 @@ func handlerHighFCF() error {
 
 	}
 
-	fmt.Println("Top Dividend Stocks in", sector_name.String)
+	fmt.Println("Top Free Cash Flow Stocks in", sector_name.String)
 
 	for _, stock := range data {
-		fmt.Println(stock.Symbol.String, ":", stock.Maxfcf.Int64)
+		fmt.Println(stock.Symbol.String, stock.Displayname.String, ":", formatIntegers(stock.Maxfcf.Int64))
+	}
+
+	return nil
+
+}
+
+func handlerHighGrowth() error {
+
+	if len(cfg.args) < 1 {
+		return fmt.Errorf("not enough arguments")
+	}
+
+	var sector_name sql.NullString
+
+	sector_name.Scan(cfg.args[0])
+
+	data, err := cfg.db.EarningsQuartGrowthBySector(context.Background(), database.EarningsQuartGrowthBySectorParams{
+		Sector:   sector_name,
+		Sector_2: sector_name,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	if len(data) == 0 {
+		return fmt.Errorf("no data found")
+
+	}
+
+	fmt.Println("Top Earnings Quarterly Growth Stocks in", sector_name.String)
+
+	for _, stock := range data {
+		fmt.Println(stock.Symbol.String, stock.Displayname.String, ":", stock.Maxfcf.Float64)
 	}
 
 	return nil
@@ -172,6 +219,16 @@ func handlerHighFCF() error {
 func handlerExit() error {
 
 	os.Exit(0)
+	return nil
+}
+
+func handlerHelp() error {
+	fmt.Println("Commands")
+
+	for name, cmd := range CommandMap {
+
+		fmt.Println("- ", name, ":", cmd.description)
+	}
 	return nil
 
 }

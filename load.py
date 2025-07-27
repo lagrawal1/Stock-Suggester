@@ -3,6 +3,7 @@ import pandas as pd
 import sqlite3
 from datetime import datetime
 
+'''
 def detect_sqlite_type(val):
     """Return appropriate SQLite type for a Python value."""
     if isinstance(val, bool):
@@ -119,3 +120,12 @@ def main():
 
 if __name__ == "__main__":
     main()
+'''
+
+lpl = yf.Ticker("LPL")
+
+# Get the cash flow statement
+fcf= lpl.info.get("freeCashflow")
+
+# Get the Free Cash Flow (FCF) for the most recent period
+print(f"LPL's most recent Free Cash Flow: {fcf}")
