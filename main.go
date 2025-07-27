@@ -3,11 +3,8 @@ package main
 import (
 	"Stock-Suggester/internal/database"
 	"bufio"
-	"context"
 	"database/sql"
-	"encoding/json"
 	"fmt"
-	"net/http"
 	"os"
 	"strings"
 
@@ -33,30 +30,6 @@ func StartDB() {
 	fmt.Println(cfg.db)
 }
 
-func (cfg *Config) handlerIndustriesAPI(w http.ResponseWriter, req *http.Request) {
-	if cfg.db == nil {
-		os.Exit(1)
-	}
-
-	data, err := cfg.db.DistinctIndustry(context.Background())
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	jsondata, err := json.Marshal(&data)
-
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
-	}
-
-	w.Write(jsondata)
-	w.WriteHeader(http.StatusOK)
-
-}
-
 func main() {
 
 	CommandMap = make(map[string]Command)
@@ -64,10 +37,13 @@ func main() {
 	StartDB()
 
 	CommandRegister("industries", "za industries", handlerIndustries)
+	CommandRegister("sectors", "za sectors", handlerSectors)
+	CommandRegister("highdiv", "Gives the top 5 highest dividend stocks in a given industry", handlerHighDiv)
+	CommandRegister("highfcf", "Gives the top 5 highest free cash flow stocks in a given sectore", handlerHighFCF)
+	CommandRegister("exit", "Exits", handlerExit)
 
 	for {
 
-		cfg := Config{}
 		buf := bufio.NewScanner(os.Stdin)
 		fmt.Print("Stock Suggester > ")
 		buf.Scan()
@@ -75,15 +51,17 @@ func main() {
 		tokens := strings.Fields(buf.Text())
 
 		cmd := tokens[0]
-		args := tokens[1:]
-
-		cfg.args = args
+		cfg.args = make([]string, 0)
+		cfg.args = append(cfg.args, tokens[1:]...)
 		command, ok := CommandMap[cmd]
 
 		if !ok {
 			fmt.Println("Not a valid command")
 		} else {
-			command.handler()
+			err := command.handler()
+			if err != nil {
+				fmt.Println(err)
+			}
 		}
 	}
 

@@ -13,6 +13,30 @@ import (
 	"github.com/joho/godotenv"
 )
 
+func (cfg *Config) handlerIndustriesAPI(w http.ResponseWriter, req *http.Request) {
+	if cfg.db == nil {
+		os.Exit(1)
+	}
+
+	data, err := cfg.db.DistinctIndustry(context.Background())
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	jsondata, err := json.Marshal(&data)
+
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
+
+	w.Write(jsondata)
+	w.WriteHeader(http.StatusOK)
+
+}
+
 func SrvReady(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("OK"))
