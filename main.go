@@ -30,6 +30,12 @@ func StartDB() {
 }
 
 func main() {
+	err := handlerIndustriesAPI()
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	CommandMap = make(map[string]Command)
 	cfg = Config{}

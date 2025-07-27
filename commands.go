@@ -4,11 +4,32 @@ import (
 	"Stock-Suggester/internal/database"
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"os"
 	"slices"
 	"strings"
 )
+
+func APIHealth() error {
+	res, err := http.Get("https://www.lokics.xyz/healthz")
+
+	if err != nil {
+		fmt.Println(err)
+		return err
+	}
+
+	if res.StatusCode == 200 {
+		return nil
+	} else {
+		if res.StatusCode == 530 {
+			fmt.Println("API Server is currently offline.")
+		}
+		return fmt.Errorf("error: %v ", res.StatusCode)
+	}
+}
 
 func formatIntegers(input int64) string {
 
@@ -42,7 +63,35 @@ func CommandRegister(name string, description string, handler func() error) {
 	CommandMap[name] = Command{name: name, description: description, handler: handler}
 }
 
+func handlerIndustriesAPI() error {
+
+	if err := APIHealth(); err != nil {
+		return err
+	}
+
+	res, err := http.Get("https://www.lokics.xyz/stocks/industries")
+	if err != nil {
+		return err
+	}
+
+	data, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		return err
+	}
+
+	var data_unmar []sql.NullString
+
+	json.Unmarshal(data, &data_unmar)
+
+	for _, industry := range data_unmar {
+		fmt.Println(industry.String)
+	}
+	return nil
+}
+
 func handlerIndustries() error {
+
 	if cfg.db == nil {
 		fmt.Print("Start Database")
 		os.Exit(1)
