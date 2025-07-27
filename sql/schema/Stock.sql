@@ -121,7 +121,7 @@ CREATE TABLE IF NOT EXISTS Stock (
     ebitdaMargins REAL,
     operatingMargins REAL,
     financialCurrency TEXT,
-    symbol TEXT,
+    symbol TEXT UNIQUE,
     language TEXT,
     region TEXT,
     typeDisp TEXT,

@@ -84,6 +84,12 @@ def main():
     for symbol in symbols:
         print(f"Processing: {symbol}")
         try:
+            # Check if symbol already exists in DB
+            curr.execute('SELECT 1 FROM Stock WHERE symbol = ? LIMIT 1;', (symbol,))
+            if curr.fetchone():
+                print(f"Symbol {symbol} already exists in DB, skipping insert.")
+                continue
+
             stock = yf.Ticker(symbol)
             info = stock.info
 

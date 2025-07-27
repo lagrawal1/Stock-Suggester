@@ -2,22 +2,18 @@ package main
 
 import (
 	"Stock-Suggester/internal/database"
+	"bufio"
 	"context"
 	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
+	"strings"
 
 	"github.com/joho/godotenv"
 	_ "modernc.org/sqlite"
 )
-
-func SrvReady(w http.ResponseWriter, req *http.Request) {
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("OK"))
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-}
 
 func StartDB() {
 	err := godotenv.Load("data.env")
@@ -61,31 +57,34 @@ func (cfg *Config) handlerIndustriesAPI(w http.ResponseWriter, req *http.Request
 
 }
 
-func API() {
+func main() {
 
+	CommandMap = make(map[string]Command)
 	cfg = Config{}
-
 	StartDB()
 
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", SrvReady)
+	CommandRegister("industries", "za industries", handlerIndustries)
 
-	mux.HandleFunc("GET /stocks", cfg.handlerIndustriesAPI)
+	for {
 
-	server := http.Server{
-		Handler: mux,
-		Addr:    ":8080",
+		cfg := Config{}
+		buf := bufio.NewScanner(os.Stdin)
+		fmt.Print("Stock Suggester > ")
+		buf.Scan()
+
+		tokens := strings.Fields(buf.Text())
+
+		cmd := tokens[0]
+		args := tokens[1:]
+
+		cfg.args = args
+		command, ok := CommandMap[cmd]
+
+		if !ok {
+			fmt.Println("Not a valid command")
+		} else {
+			command.handler()
+		}
 	}
 
-	err := http.ListenAndServe(server.Addr, server.Handler)
-
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
-}
-
-func main() {
-	CLI()
 }

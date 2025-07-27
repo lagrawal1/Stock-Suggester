@@ -2,7 +2,6 @@ package main
 
 import (
 	"Stock-Suggester/internal/database"
-	"bufio"
 	"context"
 	"database/sql"
 	"fmt"
@@ -40,7 +39,15 @@ func handlerIndustries() error {
 
 	var Symbol sql.NullString
 	Symbol.Scan("AAPL")
-	data_2, err := cfg.db.GetStockDataBySymbol(context.Background(), Symbol)
+
+	var industry sql.NullString
+	industry.Scan("Leisure")
+	data_2, err := cfg.db.BestDividendStocksByIndustry(context.Background(), database.BestDividendStocksByIndustryParams{
+		Industry:   industry,
+		Industry_2: industry,
+	},
+	)
+
 	fmt.Println(data_2)
 
 	if err != nil {
@@ -76,41 +83,38 @@ func handlerIndustries() error {
 
 }
 
-func handlerExit() error {
+func handlerHighDiv() error {
 
-	os.Exit(0)
+	if len(cfg.args) < 1 {
+		return fmt.Errorf("not enough arguments")
+	}
+
+	var industry_name sql.NullString
+
+	industry_name.Scan(cfg.args[0])
+
+	data, err := cfg.db.BestDividendStocksByIndustry(context.Background(), database.BestDividendStocksByIndustryParams{
+		Industry:   industry_name,
+		Industry_2: industry_name,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println("Top Dividend Stocks in", industry_name.String)
+
+	for _, stock := range data {
+		fmt.Println(stock.Symbol.String, ":", stock.MaxDiv.Float64)
+	}
+
 	return nil
 
 }
 
-func CLI() {
+func handlerExit() error {
 
-	CommandMap = make(map[string]Command)
-	cfg = Config{}
-	StartDB()
-
-	CommandRegister("industries", "za industries", handlerIndustries)
-
-	for {
-
-		cfg := Config{}
-		buf := bufio.NewScanner(os.Stdin)
-		fmt.Print("Stock Suggester > ")
-		buf.Scan()
-
-		tokens := strings.Fields(buf.Text())
-
-		cmd := tokens[0]
-		args := tokens[1:]
-
-		cfg.args = args
-		command, ok := CommandMap[cmd]
-
-		if !ok {
-			fmt.Println("Not a valid command")
-		} else {
-			command.handler()
-		}
-	}
+	os.Exit(0)
+	return nil
 
 }
