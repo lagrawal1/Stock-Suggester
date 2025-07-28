@@ -11,6 +11,21 @@ import (
 	"strconv"
 )
 
+func validSectors(input int) error {
+	if input <= 1 || input > 12 {
+		return fmt.Errorf("Not valid id")
+
+	}
+	return nil
+}
+
+func validIndustries(input int) error {
+	if input <= 0 || input > 146 || input == 4 {
+		return fmt.Errorf("Not valid id")
+	}
+	return nil
+}
+
 func APIHealth() error {
 	res, err := http.Get("https://www.lokics.xyz/healthz")
 
@@ -220,6 +235,11 @@ func handlerHighDivByInd() error {
 		return err
 	}
 
+	err = validIndustries(industry_id)
+	if err != nil {
+		return err
+	}
+
 	data := make([]database.BestDividendStocksByIndustryRow, 0)
 	if err := APIHealth(); err != nil {
 
@@ -283,10 +303,15 @@ func handlerHighDivBySec() error {
 		return fmt.Errorf("not enough arguments")
 	}
 
-	var industry_id int
+	var sector_id int
 
-	industry_id, err := strconv.Atoi(cfg.args[0])
+	sector_id, err := strconv.Atoi(cfg.args[0])
 
+	if err != nil {
+		return err
+	}
+
+	err = validSectors(sector_id)
 	if err != nil {
 		return err
 	}
@@ -295,7 +320,7 @@ func handlerHighDivBySec() error {
 
 	if err := APIHealth(); err != nil {
 
-		data_loc, err := cfg.db.HighDividendBySector(context.Background(), int64(industry_id))
+		data_loc, err := cfg.db.HighDividendBySector(context.Background(), int64(sector_id))
 		if err != nil {
 			return err
 		}
@@ -304,7 +329,7 @@ func handlerHighDivBySec() error {
 			return fmt.Errorf("no data found")
 		}
 	} else {
-		data_loc, err := handlerHighDivBySecAPI(int64(industry_id))
+		data_loc, err := handlerHighDivBySecAPI(int64(sector_id))
 
 		if err != nil {
 			fmt.Println(err)
@@ -358,6 +383,10 @@ func handlerHighFCF() error {
 
 	id, err := strconv.Atoi(cfg.args[0])
 
+	if err != nil {
+		return err
+	}
+	err = validSectors(id)
 	if err != nil {
 		return err
 	}
@@ -425,6 +454,11 @@ func handlerHighGrowth() error {
 
 	id, err := strconv.Atoi(cfg.args[0])
 
+	if err != nil {
+		return err
+	}
+
+	err = validSectors(id)
 	if err != nil {
 		return err
 	}
