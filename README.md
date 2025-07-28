@@ -9,7 +9,6 @@ To install Stock-Suggester, clone this repositiory and simply run "go run . " fr
 ## How to Use
 Here is a list of commands that you can use!
 -  exit : Exits the REPL.
--  growth : Gives the top 5 highest growth stocks by sector.
 -  help : Help command gives description of all commands.
 -  industries : Gives a list of industries.
 -  sectors : Gives a list of sectors
@@ -18,6 +17,7 @@ For these commands an integer must be given based on the sectors and industries.
 -  highdivbyind : Gives the top 5 highest dividend stocks in a given industry.
 -  highdivbysec : Gives the top 5 highest dividend stocks in a given sector.
 -  highfcf : Gives the top 5 highest free cash flow stocks in a given sector.
+-  growth : Gives the top 5 highest growth stocks by sector.
 
 Ex: highdivbyind 15
 

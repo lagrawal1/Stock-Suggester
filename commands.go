@@ -187,7 +187,7 @@ func handlerSectors() error {
 
 func handlerHighDivByIndAPI(id int64) ([]database.BestDividendStocksByIndustryRow, error) {
 
-	res, err := http.Get("https://www.lokics.xyz/stocks/divbysector?industry_id=" + strconv.Itoa(int(id)))
+	res, err := http.Get("https://www.lokics.xyz/stocks/divbyindustry?industry_id=" + strconv.Itoa(int(id)))
 
 	if err != nil {
 		return nil, err
