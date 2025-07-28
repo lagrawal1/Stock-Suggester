@@ -3,7 +3,6 @@ package main
 import (
 	"Stock-Suggester/internal/database"
 	"context"
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -62,45 +61,53 @@ func CommandRegister(name string, description string, handler func() error) {
 	CommandMap[name] = Command{name: name, description: description, handler: handler}
 }
 
-func handlerIndustriesAPI() error {
+func handlerIndustriesAPI() ([]database.Industry, error) {
 
 	res, err := http.Get("https://www.lokics.xyz/stocks/industries")
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	data, err := io.ReadAll(res.Body)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	var data_unmar []sql.NullString
+	var data_unmar []database.Industry
 
 	json.Unmarshal(data, &data_unmar)
 
-	for _, industry := range data_unmar {
-		fmt.Println(industry.String)
-	}
-	return nil
+	return data_unmar, nil
 }
 
 func handlerIndustries() error {
-
-	if err := APIHealth(); err != nil {
-		fmt.Println("Using local database.")
-	}
 
 	if cfg.db == nil {
 		fmt.Print("Start Database")
 		os.Exit(1)
 	}
 
-	data, err := cfg.db.DistinctIndustries(context.Background())
+	var data []database.Industry
 
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+	if err := APIHealth(); err != nil {
+
+		fmt.Println("Using local database.")
+
+		data, err = cfg.db.DistinctIndustries(context.Background())
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	} else {
+		data, err = handlerIndustriesAPI()
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
 	}
 
 	fmt.Println("List of Industries")
@@ -114,6 +121,26 @@ func handlerIndustries() error {
 
 }
 
+func handlerSectorsAPI() ([]database.Sector, error) {
+
+	res, err := http.Get("https://www.lokics.xyz/stocks/sectors")
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var data_unmar []database.Sector
+
+	json.Unmarshal(data, &data_unmar)
+
+	return data_unmar, nil
+}
+
 func handlerSectors() error {
 
 	if cfg.db == nil {
@@ -121,11 +148,26 @@ func handlerSectors() error {
 		os.Exit(1)
 	}
 
-	data, err := cfg.db.DistinctSectors(context.Background())
+	var data []database.Sector
 
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(1)
+	if err := APIHealth(); err != nil {
+
+		fmt.Println("Using local database.")
+
+		data, err = cfg.db.DistinctSectors(context.Background())
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+	} else {
+		data, err = handlerSectorsAPI()
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+
 	}
 
 	fmt.Println("List of Sectors")
@@ -139,7 +181,28 @@ func handlerSectors() error {
 
 }
 
-func handlerHighDiv() error {
+func handlerHighDivByIndAPI(id int64) ([]database.BestDividendStocksByIndustryRow, error) {
+
+	res, err := http.Get("https://www.lokics.xyz/stocks/divbysector?industry_id=" + strconv.Itoa(int(id)))
+
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var data_unmar []database.BestDividendStocksByIndustryRow
+
+	json.Unmarshal(data, &data_unmar)
+
+	return data_unmar, nil
+}
+
+func handlerHighDivByInd() error {
 
 	if len(cfg.args) < 1 {
 		return fmt.Errorf("not enough arguments")
@@ -153,14 +216,26 @@ func handlerHighDiv() error {
 		return err
 	}
 
-	data, err := cfg.db.BestDividendStocksByIndustry(context.Background(), int64(industry_id))
+	var data []database.BestDividendStocksByIndustryRow
+	if err := APIHealth(); err != nil {
 
-	if err != nil {
-		return err
-	}
+		data, err := cfg.db.BestDividendStocksByIndustry(context.Background(), int64(industry_id))
+		if err != nil {
+			return err
+		}
+		if len(data) == 0 {
+			return fmt.Errorf("no data found")
+		}
+	} else {
+		data, err = handlerHighDivByIndAPI(int64(industry_id))
 
-	if len(data) == 0 {
-		return fmt.Errorf("no data found")
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		if len(data) == 0 {
+			return fmt.Errorf("no data found")
+		}
 
 	}
 
@@ -172,6 +247,96 @@ func handlerHighDiv() error {
 
 	return nil
 
+}
+
+func handlerHighDivBySecAPI(id int64) ([]database.HighDividendBySectorRow, error) {
+
+	res, err := http.Get("https://www.lokics.xyz/stocks/divbysector?sector_id=" + strconv.Itoa(int(id)))
+
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var data_unmar []database.HighDividendBySectorRow
+
+	json.Unmarshal(data, &data_unmar)
+
+	return data_unmar, nil
+}
+
+func handlerHighDivBySec() error {
+
+	if len(cfg.args) < 1 {
+		return fmt.Errorf("not enough arguments")
+	}
+
+	var industry_id int
+
+	industry_id, err := strconv.Atoi(cfg.args[0])
+
+	if err != nil {
+		return err
+	}
+
+	var data []database.HighDividendBySectorRow
+
+	if err := APIHealth(); err != nil {
+
+		data, err := cfg.db.HighDividendBySector(context.Background(), int64(industry_id))
+		if err != nil {
+			return err
+		}
+		if len(data) == 0 {
+			return fmt.Errorf("no data found")
+		}
+	} else {
+		data, err = handlerHighDivBySecAPI(int64(industry_id))
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		if len(data) == 0 {
+			return fmt.Errorf("no data found")
+		}
+
+	}
+
+	fmt.Println("\nTop Dividend Stocks in", data[0].Sector.String)
+
+	for _, stock := range data {
+		fmt.Println("- ", stock.Symbol.String, stock.Displayname.String, ":", stock.MaxDiv.Float64)
+	}
+
+	return nil
+
+}
+
+func handlerHighFCFBySecAPI(id int64) ([]database.HighCashFlowBySectorRow, error) {
+
+	res, err := http.Get("https://www.lokics.xyz/stocks/fcfbysector?sector_id=" + strconv.Itoa(int(id)))
+
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var data_unmar []database.HighCashFlowBySectorRow
+
+	json.Unmarshal(data, &data_unmar)
+
+	return data_unmar, nil
 }
 
 func handlerHighFCF() error {
@@ -187,14 +352,28 @@ func handlerHighFCF() error {
 		return err
 	}
 
-	data, err := cfg.db.HighCashFlowBySector(context.Background(), int64(id))
+	var data []database.HighCashFlowBySectorRow
 
-	if err != nil {
-		return err
-	}
+	if err := APIHealth(); err != nil {
 
-	if len(data) == 0 {
-		return fmt.Errorf("no data found")
+		data, err := cfg.db.HighDividendBySector(context.Background(), int64(id))
+		if err != nil {
+			return err
+		}
+		if len(data) == 0 {
+			return fmt.Errorf("no data found")
+		}
+	} else {
+		data, err = handlerHighFCFBySecAPI(int64(id))
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		if len(data) == 0 {
+			return fmt.Errorf("no data found")
+		}
+
 	}
 
 	fmt.Println("\nTop Free Cash Flow Stocks in", data[0].Sector.String)
@@ -206,13 +385,32 @@ func handlerHighFCF() error {
 	return nil
 }
 
+func handlerHighGrowthBySecAPI(id int64) ([]database.EarningsQuartGrowthBySectorRow, error) {
+
+	res, err := http.Get("https://www.lokics.xyz/stocks/growthbysector?sector_id=" + strconv.Itoa(int(id)))
+
+	if err != nil {
+		return nil, err
+	}
+
+	data, err := io.ReadAll(res.Body)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var data_unmar []database.EarningsQuartGrowthBySectorRow
+
+	json.Unmarshal(data, &data_unmar)
+
+	return data_unmar, nil
+}
+
 func handlerHighGrowth() error {
 
 	if len(cfg.args) < 1 {
 		return fmt.Errorf("not enough arguments")
 	}
-
-	var id int
 
 	id, err := strconv.Atoi(cfg.args[0])
 
@@ -220,14 +418,28 @@ func handlerHighGrowth() error {
 		return err
 	}
 
-	data, err := cfg.db.EarningsQuartGrowthBySector(context.Background(), int64(id))
+	var data []database.EarningsQuartGrowthBySectorRow
 
-	if err != nil {
-		return err
-	}
+	if err := APIHealth(); err != nil {
 
-	if len(data) == 0 {
-		return fmt.Errorf("no data found")
+		data, err := cfg.db.EarningsQuartGrowthBySector(context.Background(), int64(id))
+		if err != nil {
+			return err
+		}
+		if len(data) == 0 {
+			return fmt.Errorf("no data found")
+		}
+	} else {
+		data, err = handlerHighGrowthBySecAPI(int64(id))
+
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+		}
+		if len(data) == 0 {
+			return fmt.Errorf("no data found")
+		}
+
 	}
 
 	fmt.Println("\nTop Earnings Quarterly Growth Stocks in", data[0].SectorName.String)
@@ -241,7 +453,6 @@ func handlerHighGrowth() error {
 }
 
 func handlerExit() error {
-
 	os.Exit(0)
 	return nil
 }

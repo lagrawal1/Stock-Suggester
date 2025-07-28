@@ -30,20 +30,14 @@ func StartDB() {
 }
 
 func main() {
-	err := handlerIndustriesAPI()
-
-	if err != nil {
-		fmt.Println(err)
-		return
-	}
-
 	CommandMap = make(map[string]Command)
 	cfg = Config{}
 	StartDB()
 
 	CommandRegister("industries", "Gives a list of industries.", handlerIndustries)
 	CommandRegister("sectors", "Gives a list of sectors", handlerSectors)
-	CommandRegister("highdiv", "Gives the top 5 highest dividend stocks in a given industry.", handlerHighDiv)
+	CommandRegister("highdivbyind", "Gives the top 5 highest dividend stocks in a given industry.", handlerHighDivByInd)
+	CommandRegister("highdivbysec", "Gives the top 5 highest dividend stocks in a given industry.", handlerHighDivBySec)
 	CommandRegister("highfcf", "Gives the top 5 highest free cash flow stocks in a given sector.", handlerHighFCF)
 	CommandRegister("exit", "Exits the REPL.", handlerExit)
 	CommandRegister("growth", "Gives the top 5 highest growth stocks by sector.", handlerHighGrowth)
