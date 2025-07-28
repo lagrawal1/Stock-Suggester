@@ -94,19 +94,21 @@ func handlerIndustries() error {
 
 		fmt.Println("Using local database.")
 
-		data, err = cfg.db.DistinctIndustries(context.Background())
+		data_loc, err := cfg.db.DistinctIndustries(context.Background())
 
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+		data = append(data, data_loc...)
 	} else {
-		data, err = handlerIndustriesAPI()
+		data_loc, err := handlerIndustriesAPI()
 
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+		data = append(data, data_loc...)
 
 	}
 
@@ -154,19 +156,21 @@ func handlerSectors() error {
 
 		fmt.Println("Using local database.")
 
-		data, err = cfg.db.DistinctSectors(context.Background())
+		data_loc, err := cfg.db.DistinctSectors(context.Background())
 
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+		data = append(data, data_loc...)
 	} else {
-		data, err = handlerSectorsAPI()
+		data_loc, err := handlerSectorsAPI()
 
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+		data = append(data, data_loc...)
 
 	}
 
@@ -216,27 +220,30 @@ func handlerHighDivByInd() error {
 		return err
 	}
 
-	var data []database.BestDividendStocksByIndustryRow
+	data := make([]database.BestDividendStocksByIndustryRow, 0)
 	if err := APIHealth(); err != nil {
 
-		data, err := cfg.db.BestDividendStocksByIndustry(context.Background(), int64(industry_id))
+		data_loc, err := cfg.db.BestDividendStocksByIndustry(context.Background(), int64(industry_id))
+
 		if err != nil {
 			return err
 		}
+		data = append(data, data_loc...)
+
 		if len(data) == 0 {
 			return fmt.Errorf("no data found")
 		}
 	} else {
-		data, err = handlerHighDivByIndAPI(int64(industry_id))
+		data_loc, err := handlerHighDivByIndAPI(int64(industry_id))
 
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
+			return err
 		}
+		data = append(data, data_loc...)
+
 		if len(data) == 0 {
 			return fmt.Errorf("no data found")
 		}
-
 	}
 
 	fmt.Println("\nTop Dividend Stocks in", data[0].Industry.String)
@@ -288,20 +295,23 @@ func handlerHighDivBySec() error {
 
 	if err := APIHealth(); err != nil {
 
-		data, err := cfg.db.HighDividendBySector(context.Background(), int64(industry_id))
+		data_loc, err := cfg.db.HighDividendBySector(context.Background(), int64(industry_id))
 		if err != nil {
 			return err
 		}
+		data = append(data, data_loc...)
 		if len(data) == 0 {
 			return fmt.Errorf("no data found")
 		}
 	} else {
-		data, err = handlerHighDivBySecAPI(int64(industry_id))
+		data_loc, err := handlerHighDivBySecAPI(int64(industry_id))
 
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+
+		data = append(data, data_loc...)
 		if len(data) == 0 {
 			return fmt.Errorf("no data found")
 		}
@@ -356,24 +366,25 @@ func handlerHighFCF() error {
 
 	if err := APIHealth(); err != nil {
 
-		data, err := cfg.db.HighDividendBySector(context.Background(), int64(id))
+		data_loc, err := cfg.db.HighCashFlowBySector(context.Background(), int64(id))
 		if err != nil {
 			return err
 		}
+		data = append(data, data_loc...)
 		if len(data) == 0 {
 			return fmt.Errorf("no data found")
 		}
 	} else {
-		data, err = handlerHighFCFBySecAPI(int64(id))
+		data_loc, err := handlerHighFCFBySecAPI(int64(id))
 
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+		data = append(data, data_loc...)
 		if len(data) == 0 {
 			return fmt.Errorf("no data found")
 		}
-
 	}
 
 	fmt.Println("\nTop Free Cash Flow Stocks in", data[0].Sector.String)
@@ -422,20 +433,22 @@ func handlerHighGrowth() error {
 
 	if err := APIHealth(); err != nil {
 
-		data, err := cfg.db.EarningsQuartGrowthBySector(context.Background(), int64(id))
+		data_loc, err := cfg.db.EarningsQuartGrowthBySector(context.Background(), int64(id))
 		if err != nil {
 			return err
 		}
+		data = append(data, data_loc...)
 		if len(data) == 0 {
 			return fmt.Errorf("no data found")
 		}
 	} else {
-		data, err = handlerHighGrowthBySecAPI(int64(id))
+		data_loc, err := handlerHighGrowthBySecAPI(int64(id))
 
 		if err != nil {
 			fmt.Println(err)
 			os.Exit(1)
 		}
+		data = append(data, data_loc...)
 		if len(data) == 0 {
 			return fmt.Errorf("no data found")
 		}
