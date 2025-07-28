@@ -4,6 +4,7 @@ go 1.24.5
 
 require (
 	github.com/joho/godotenv v1.5.1
+	golang.org/x/time v0.12.0
 	modernc.org/sqlite v1.38.1
 )
 
