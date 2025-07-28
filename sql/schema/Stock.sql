@@ -189,3 +189,13 @@ CREATE TABLE IF NOT EXISTS Stock (
     newListingDate TEXT,
     industrySymbol TEXT
 );
+
+CREATE TABLE IF NOT EXISTS Industry(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    industry TEXT
+);
+
+CREATE TABLE IF NOT EXISTS Sector(
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sector_name TEXT
+);

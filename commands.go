@@ -9,8 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"slices"
-	"strings"
+	"strconv"
 )
 
 func APIHealth() error {
@@ -65,10 +64,6 @@ func CommandRegister(name string, description string, handler func() error) {
 
 func handlerIndustriesAPI() error {
 
-	if err := APIHealth(); err != nil {
-		return err
-	}
-
 	res, err := http.Get("https://www.lokics.xyz/stocks/industries")
 	if err != nil {
 		return err
@@ -92,12 +87,16 @@ func handlerIndustriesAPI() error {
 
 func handlerIndustries() error {
 
+	if err := APIHealth(); err != nil {
+		fmt.Println("Using local database.")
+	}
+
 	if cfg.db == nil {
 		fmt.Print("Start Database")
 		os.Exit(1)
 	}
 
-	data, err := cfg.db.DistinctIndustry(context.Background())
+	data, err := cfg.db.DistinctIndustries(context.Background())
 
 	if err != nil {
 		fmt.Println(err)
@@ -105,22 +104,12 @@ func handlerIndustries() error {
 	}
 
 	fmt.Println("List of Industries")
-	industries := make([]string, 0)
 
 	for _, industry := range data {
 
-		industries = append(industries, industry.String)
+		fmt.Println("- ", industry.ID, ":", industry.Industry.String)
 
 	}
-
-	slices.Sort(industries)
-
-	for _, industry := range industries {
-
-		fmt.Println("- ", industry)
-
-	}
-
 	return nil
 
 }
@@ -139,25 +128,11 @@ func handlerSectors() error {
 		os.Exit(1)
 	}
 
-	fmt.Println("List of Industries")
-	sectors := make([]string, 0)
+	fmt.Println("List of Sectors")
 
 	for _, sector := range data {
 
-		sector_string := strings.TrimSpace(sector.String)
-		if sector_string == "" || sector_string == "None" {
-			continue
-		}
-
-		sectors = append(sectors, sector.String)
-
-	}
-
-	slices.Sort(sectors)
-
-	for _, sector := range sectors {
-
-		fmt.Println("- ", sector)
+		fmt.Println("- ", sector.ID, ":", sector.SectorName.String)
 
 	}
 	return nil
@@ -170,14 +145,15 @@ func handlerHighDiv() error {
 		return fmt.Errorf("not enough arguments")
 	}
 
-	var industry_name sql.NullString
+	var industry_id int
 
-	industry_name.Scan(cfg.args[0])
+	industry_id, err := strconv.Atoi(cfg.args[0])
 
-	data, err := cfg.db.BestDividendStocksByIndustry(context.Background(), database.BestDividendStocksByIndustryParams{
-		Industry:   industry_name,
-		Industry_2: industry_name,
-	})
+	if err != nil {
+		return err
+	}
+
+	data, err := cfg.db.BestDividendStocksByIndustry(context.Background(), int64(industry_id))
 
 	if err != nil {
 		return err
@@ -188,10 +164,10 @@ func handlerHighDiv() error {
 
 	}
 
-	fmt.Println("Top Dividend Stocks in", industry_name.String)
+	fmt.Println("\nTop Dividend Stocks in", data[0].Industry.String)
 
 	for _, stock := range data {
-		fmt.Println(stock.Symbol.String, stock.Displayname.String, ":", stock.MaxDiv.Float64)
+		fmt.Println("- ", stock.Symbol.String, stock.Displayname.String, ":", stock.MaxDiv.Float64)
 	}
 
 	return nil
@@ -203,14 +179,15 @@ func handlerHighFCF() error {
 		return fmt.Errorf("not enough arguments")
 	}
 
-	var sector_name sql.NullString
+	var id int
 
-	sector_name.Scan(cfg.args[0])
+	id, err := strconv.Atoi(cfg.args[0])
 
-	data, err := cfg.db.HighCashFlowBySector(context.Background(), database.HighCashFlowBySectorParams{
-		Sector:   sector_name,
-		Sector_2: sector_name,
-	})
+	if err != nil {
+		return err
+	}
+
+	data, err := cfg.db.HighCashFlowBySector(context.Background(), int64(id))
 
 	if err != nil {
 		return err
@@ -218,17 +195,15 @@ func handlerHighFCF() error {
 
 	if len(data) == 0 {
 		return fmt.Errorf("no data found")
-
 	}
 
-	fmt.Println("Top Free Cash Flow Stocks in", sector_name.String)
+	fmt.Println("\nTop Free Cash Flow Stocks in", data[0].Sector.String)
 
 	for _, stock := range data {
-		fmt.Println(stock.Symbol.String, stock.Displayname.String, ":", formatIntegers(stock.Maxfcf.Int64))
+		fmt.Println("- ", stock.Symbol.String, stock.Displayname.String, ":", formatIntegers(stock.Maxfcf.Int64))
 	}
 
 	return nil
-
 }
 
 func handlerHighGrowth() error {
@@ -237,14 +212,15 @@ func handlerHighGrowth() error {
 		return fmt.Errorf("not enough arguments")
 	}
 
-	var sector_name sql.NullString
+	var id int
 
-	sector_name.Scan(cfg.args[0])
+	id, err := strconv.Atoi(cfg.args[0])
 
-	data, err := cfg.db.EarningsQuartGrowthBySector(context.Background(), database.EarningsQuartGrowthBySectorParams{
-		Sector:   sector_name,
-		Sector_2: sector_name,
-	})
+	if err != nil {
+		return err
+	}
+
+	data, err := cfg.db.EarningsQuartGrowthBySector(context.Background(), int64(id))
 
 	if err != nil {
 		return err
@@ -252,13 +228,12 @@ func handlerHighGrowth() error {
 
 	if len(data) == 0 {
 		return fmt.Errorf("no data found")
-
 	}
 
-	fmt.Println("Top Earnings Quarterly Growth Stocks in", sector_name.String)
+	fmt.Println("\nTop Earnings Quarterly Growth Stocks in", data[0].SectorName.String)
 
 	for _, stock := range data {
-		fmt.Println(stock.Symbol.String, stock.Displayname.String, ":", stock.Maxfcf.Float64)
+		fmt.Println("- ", stock.Symbol.String, stock.Displayname.String, ":", stock.Maxfcf.Float64)
 	}
 
 	return nil
@@ -275,9 +250,7 @@ func handlerHelp() error {
 	fmt.Println("Commands")
 
 	for name, cmd := range CommandMap {
-
 		fmt.Println("- ", name, ":", cmd.description)
 	}
 	return nil
-
 }

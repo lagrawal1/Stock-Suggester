@@ -11,26 +11,29 @@ import (
 )
 
 const bestDividendStocksByIndustry = `-- name: BestDividendStocksByIndustry :many
-;
-
-SELECT s1.symbol, s1.displayName, s1.industry, s1.dividendYield AS max_div
-FROM Stock s1
-WHERE s1.industry != 'None' 
-  AND s1.industry != '' 
-  AND LOWER(s1.industry )= ?
-  AND (
-      SELECT COUNT(*) 
-      FROM Stock s2 
-      WHERE s2.industry = s1.industry 
-        AND s2.dividendYield > s1.dividendYield
-  ) < ?
-ORDER BY s1.dividendYield DESC LIMIT 5
+SELECT 
+    s1.symbol, 
+    s1.displayName, 
+    s1.industry, 
+    s1.dividendYield AS max_div
+FROM 
+    Stock s1
+JOIN 
+    Industry i ON LOWER(s1.industry) = LOWER(i.industry)
+WHERE 
+    i.id = ?
+    AND s1.industry IS NOT NULL
+    AND TRIM(s1.industry) != ''
+    AND (
+        SELECT COUNT(*) 
+        FROM Stock s2 
+        WHERE LOWER(s2.industry) = LOWER(s1.industry)
+          AND s2.dividendYield > s1.dividendYield
+    ) < 5
+ORDER BY 
+    s1.dividendYield DESC 
+LIMIT 5
 `
-
-type BestDividendStocksByIndustryParams struct {
-	Industry   sql.NullString
-	Industry_2 sql.NullString
-}
 
 type BestDividendStocksByIndustryRow struct {
 	Symbol      sql.NullString
@@ -39,8 +42,8 @@ type BestDividendStocksByIndustryRow struct {
 	MaxDiv      sql.NullFloat64
 }
 
-func (q *Queries) BestDividendStocksByIndustry(ctx context.Context, arg BestDividendStocksByIndustryParams) ([]BestDividendStocksByIndustryRow, error) {
-	rows, err := q.db.QueryContext(ctx, bestDividendStocksByIndustry, arg.Industry, arg.Industry_2)
+func (q *Queries) BestDividendStocksByIndustry(ctx context.Context, id int64) ([]BestDividendStocksByIndustryRow, error) {
+	rows, err := q.db.QueryContext(ctx, bestDividendStocksByIndustry, id)
 	if err != nil {
 		return nil, err
 	}
@@ -67,23 +70,23 @@ func (q *Queries) BestDividendStocksByIndustry(ctx context.Context, arg BestDivi
 	return items, nil
 }
 
-const distinctIndustry = `-- name: DistinctIndustry :many
-SELECT DISTINCT industry FROM Stock WHERE industry != 'None' AND industry IS NOT NULL
+const distinctIndustries = `-- name: DistinctIndustries :many
+SELECT id, industry FROM Industry
 `
 
-func (q *Queries) DistinctIndustry(ctx context.Context) ([]sql.NullString, error) {
-	rows, err := q.db.QueryContext(ctx, distinctIndustry)
+func (q *Queries) DistinctIndustries(ctx context.Context) ([]Industry, error) {
+	rows, err := q.db.QueryContext(ctx, distinctIndustries)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []sql.NullString
+	var items []Industry
 	for rows.Next() {
-		var industry sql.NullString
-		if err := rows.Scan(&industry); err != nil {
+		var i Industry
+		if err := rows.Scan(&i.ID, &i.Industry); err != nil {
 			return nil, err
 		}
-		items = append(items, industry)
+		items = append(items, i)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
@@ -95,24 +98,22 @@ func (q *Queries) DistinctIndustry(ctx context.Context) ([]sql.NullString, error
 }
 
 const distinctSectors = `-- name: DistinctSectors :many
-;
-
-SELECT DISTINCT sector FROM Stock WHERE sector != 'None' AND sector IS NOT NULL
+SELECT id, sector_name FROM Sector
 `
 
-func (q *Queries) DistinctSectors(ctx context.Context) ([]sql.NullString, error) {
+func (q *Queries) DistinctSectors(ctx context.Context) ([]Sector, error) {
 	rows, err := q.db.QueryContext(ctx, distinctSectors)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []sql.NullString
+	var items []Sector
 	for rows.Next() {
-		var sector sql.NullString
-		if err := rows.Scan(&sector); err != nil {
+		var i Sector
+		if err := rows.Scan(&i.ID, &i.SectorName); err != nil {
 			return nil, err
 		}
-		items = append(items, sector)
+		items = append(items, i)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err
@@ -124,34 +125,37 @@ func (q *Queries) DistinctSectors(ctx context.Context) ([]sql.NullString, error)
 }
 
 const earningsQuartGrowthBySector = `-- name: EarningsQuartGrowthBySector :many
-SELECT s1.symbol, s1.displayName, s1.sector, s1.earningsQuarterlyGrowth AS maxFCF
-FROM Stock s1
-WHERE s1.sector != 'None' 
-  AND s1.sector != '' 
-  AND LOWER(s1.sector) = ?
-  AND (
-      SELECT COUNT(*) 
-      FROM Stock s2 
-      WHERE LOWER(s2.sector) = LOWER(s1.sector )
-        AND s2.earningsQuarterlyGrowth > s1.earningsQuarterlyGrowth
-  ) < ?
-ORDER BY s1.earningsQuarterlyGrowth DESC LIMIT 5
+SELECT 
+    s1.symbol, 
+    s1.displayName, 
+    sec.sector_name, 
+    s1.earningsQuarterlyGrowth AS maxFCF
+FROM 
+    Stock s1
+JOIN 
+    Sector sec ON LOWER(s1.sector) = LOWER(sec.sector_name)
+WHERE 
+    sec.id = ?
+    AND (
+        SELECT COUNT(*) 
+        FROM Stock s2 
+        WHERE LOWER(s2.sector) = LOWER(s1.sector)
+          AND s2.earningsQuarterlyGrowth > s1.earningsQuarterlyGrowth
+    ) < 5
+ORDER BY 
+    s1.earningsQuarterlyGrowth DESC 
+LIMIT 5
 `
-
-type EarningsQuartGrowthBySectorParams struct {
-	Sector   sql.NullString
-	Sector_2 sql.NullString
-}
 
 type EarningsQuartGrowthBySectorRow struct {
 	Symbol      sql.NullString
 	Displayname sql.NullString
-	Sector      sql.NullString
+	SectorName  sql.NullString
 	Maxfcf      sql.NullFloat64
 }
 
-func (q *Queries) EarningsQuartGrowthBySector(ctx context.Context, arg EarningsQuartGrowthBySectorParams) ([]EarningsQuartGrowthBySectorRow, error) {
-	rows, err := q.db.QueryContext(ctx, earningsQuartGrowthBySector, arg.Sector, arg.Sector_2)
+func (q *Queries) EarningsQuartGrowthBySector(ctx context.Context, id int64) ([]EarningsQuartGrowthBySectorRow, error) {
+	rows, err := q.db.QueryContext(ctx, earningsQuartGrowthBySector, id)
 	if err != nil {
 		return nil, err
 	}
@@ -162,7 +166,7 @@ func (q *Queries) EarningsQuartGrowthBySector(ctx context.Context, arg EarningsQ
 		if err := rows.Scan(
 			&i.Symbol,
 			&i.Displayname,
-			&i.Sector,
+			&i.SectorName,
 			&i.Maxfcf,
 		); err != nil {
 			return nil, err
@@ -380,24 +384,27 @@ func (q *Queries) GetStockDataBySymbol(ctx context.Context, symbol sql.NullStrin
 }
 
 const highCashFlowBySector = `-- name: HighCashFlowBySector :many
-SELECT s1.symbol, s1.displayName, s1.sector, s1.freeCashflow AS maxFCF
-FROM Stock s1
-WHERE s1.sector != 'None' 
-  AND s1.sector != '' 
-  AND LOWER(s1.sector) = ?
-  AND (
-      SELECT COUNT(*) 
-      FROM Stock s2 
-      WHERE s2.sector = s1.sector 
-        AND s2.freeCashflow > s1.freeCashflow
-  ) < ?
-ORDER BY s1.freeCashflow DESC LIMIT 5
+SELECT 
+    s1.symbol, 
+    s1.displayName, 
+    s1.sector, 
+    s1.freeCashflow AS maxFCF
+FROM 
+    Stock s1
+JOIN 
+    Sector sec ON LOWER(s1.sector) = LOWER(sec.sector_name)
+WHERE 
+    sec.id = ?
+    AND (
+        SELECT COUNT(*) 
+        FROM Stock s2 
+        WHERE LOWER(s2.sector) = LOWER(s1.sector)
+          AND s2.freeCashflow > s1.freeCashflow
+    ) < 5
+ORDER BY 
+    s1.freeCashflow DESC 
+LIMIT 5
 `
-
-type HighCashFlowBySectorParams struct {
-	Sector   sql.NullString
-	Sector_2 sql.NullString
-}
 
 type HighCashFlowBySectorRow struct {
 	Symbol      sql.NullString
@@ -406,8 +413,8 @@ type HighCashFlowBySectorRow struct {
 	Maxfcf      sql.NullInt64
 }
 
-func (q *Queries) HighCashFlowBySector(ctx context.Context, arg HighCashFlowBySectorParams) ([]HighCashFlowBySectorRow, error) {
-	rows, err := q.db.QueryContext(ctx, highCashFlowBySector, arg.Sector, arg.Sector_2)
+func (q *Queries) HighCashFlowBySector(ctx context.Context, id int64) ([]HighCashFlowBySectorRow, error) {
+	rows, err := q.db.QueryContext(ctx, highCashFlowBySector, id)
 	if err != nil {
 		return nil, err
 	}

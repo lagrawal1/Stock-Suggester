@@ -8,6 +8,16 @@ import (
 	"database/sql"
 )
 
+type Industry struct {
+	ID       int64
+	Industry sql.NullString
+}
+
+type Sector struct {
+	ID         int64
+	SectorName sql.NullString
+}
+
 type Stock struct {
 	ID                                int64
 	Address1                          sql.NullString
