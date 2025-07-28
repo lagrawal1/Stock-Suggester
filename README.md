@@ -13,9 +13,15 @@ Here is a list of commands that you can use!
 -  help : Help command gives description of all commands.
 -  industries : Gives a list of industries.
 -  sectors : Gives a list of sectors
+
+For these commands an integer must be given based on the sectors and industries.
 -  highdivbyind : Gives the top 5 highest dividend stocks in a given industry.
 -  highdivbysec : Gives the top 5 highest dividend stocks in a given sector.
 -  highfcf : Gives the top 5 highest free cash flow stocks in a given sector.
+
+Ex: highdivbyind 15
+
+
 
 ## Technology and Tools
 The api directory shows the api that I made to serve stock data from a server from my computer. The data goes through a cloudflare tunnel and serves to the REPL. If the api is down (since I'm sleepin), data from the local sqlite database will be used. 
