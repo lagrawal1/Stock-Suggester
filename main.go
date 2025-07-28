@@ -37,7 +37,7 @@ func main() {
 	CommandRegister("industries", "Gives a list of industries.", handlerIndustries)
 	CommandRegister("sectors", "Gives a list of sectors", handlerSectors)
 	CommandRegister("highdivbyind", "Gives the top 5 highest dividend stocks in a given industry.", handlerHighDivByInd)
-	CommandRegister("highdivbysec", "Gives the top 5 highest dividend stocks in a given industry.", handlerHighDivBySec)
+	CommandRegister("highdivbysec", "Gives the top 5 highest dividend stocks in a given sector.", handlerHighDivBySec)
 	CommandRegister("highfcf", "Gives the top 5 highest free cash flow stocks in a given sector.", handlerHighFCF)
 	CommandRegister("exit", "Exits the REPL.", handlerExit)
 	CommandRegister("growth", "Gives the top 5 highest growth stocks by sector.", handlerHighGrowth)
