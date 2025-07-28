@@ -6,7 +6,7 @@ A REPL that gives data anaylsis on a variety of NASDAQ stocks through data from 
 ## Installation
 To install Stock-Suggester, clone this repositiory and simply run "go run . " from the main directory. 
 
-``` git clone https://github.com/lagrawal1/Stock-Suggester.git ```
+``` git clone https://github.com/lagrawal1/Stock-Suggester.git ``` <br>
 ``` go run . ```
 
 ## How to Use
