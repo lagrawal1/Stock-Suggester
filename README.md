@@ -26,8 +26,8 @@ Ex: highdivbyind 15
 ## Technology and Tools
 The api directory shows the api that I made to serve stock data from a server from my computer. The data goes through a cloudflare tunnel and serves to the REPL. If the api is down (since I'm sleepin), data from the local sqlite database will be used. 
 
-Langauges: Go and SQL. 
-SQLC is used to generate Go from SQL.  
-Database: SQLite. 
-Serving API: Cloudflare Tunnels. 
+Langauges: Go and SQL.<br>
+SQLC is used to generate Go from SQL.<br>  
+Database: SQLite.<br>
+Serving API: Cloudflare Tunnels.<br>
 
