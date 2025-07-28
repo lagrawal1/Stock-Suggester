@@ -6,6 +6,9 @@ A REPL that gives data anaylsis on a variety of NASDAQ stocks through data from 
 ## Installation
 To install Stock-Suggester, clone this repositiory and simply run "go run . " from the main directory. 
 
+``` git clone https://github.com/lagrawal1/Stock-Suggester.git ```
+``` go run . ```
+
 ## How to Use
 Here is a list of commands that you can use!
 -  exit : Exits the REPL.
@@ -30,4 +33,9 @@ Langauges: Go and SQL.<br>
 SQLC is used to generate Go from SQL.<br>  
 Database: SQLite.<br>
 Serving API: Cloudflare Tunnels.<br>
+
+
+## Notes
+
+NOTE: ALL DATA USED IS FROM yfinance. I OWN NO RIGHTS TO THIS DATA. CONSIDER THIS DATA AS TEST DATA. THIS MAY NOT BE COMPLETELY ACCURATE AS DATA CHANGES QUICKLY IN THE STOCK MARKET.
 
