@@ -22,7 +22,7 @@ For these commands an integer must be given based on the sectors and industries.
 -  highfcf : Gives the top 5 highest free cash flow stocks in a given sector.
 -  growth : Gives the top 5 highest growth stocks by sector.
 
-Ex: highdivbyind 15
+``` cmd_name id_for_industry_or_sector``` <br> Ex: ```highdivbyind 15```
 
 
 
